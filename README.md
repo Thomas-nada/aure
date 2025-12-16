@@ -1,194 +1,261 @@
-# Aure
+# Aure v1.0
 
-**Aure** is a minimal, experimental proof-of-work blockchain inspired by early Bitcoin.
+*A simple peer-to-peer blockchain network*
 
-It is designed to be:
-- simple
-- readable
-- permissionless
-- educational
+Aure is a minimal peer-to-peer blockchain written in Node.js.
+Each node can mine blocks, synchronize with peers, recover after crashes, and persist its ledger and peer list to disk.
 
-Running a node automatically participates in:
-- block validation
-- mining
-- peer discovery
-- gossip propagation
-
-There are no accounts, no wallets, and no central authority.
+This guide walks you through **everything needed to get started**, step by step, on **Linux/macOS** and **Windows**.
 
 ---
 
-## ⚠️ Disclaimer
+## ✨ Features (v1.0)
 
-Aure is **experimental software**.
-
-- Do **not** use it for real value
-- Do **not** expose private machines carelessly
-- Expect breaking changes during early development
-
-This project is for learning, testing, and experimentation.
+* Peer-to-peer TCP network
+* Continuous or manual mining
+* Automatic chain synchronization (longest chain wins)
+* Persistent ledger (`ledger.json`)
+* Persistent peer discovery (`peers.json`)
+* Survives crashes and restarts
+* Human-readable miner identities
+* Interactive command-line interface
 
 ---
 
-## Features
+## 📦 Requirements
 
-- Proof-of-Work mining
-- Adjustable difficulty (target ~5 minutes per block)
-- Longest-chain consensus
-- Gossip-based peer discovery
-- Automatic mining on node startup
-- Anonymous, human-readable node names
-- Global connectivity via Cloudflare quick tunnels (optional)
+* **Node.js v18+** (v20 recommended)
+* A terminal (Linux/macOS) or PowerShell (Windows)
+* Network connectivity between peers
 
-Example node name:
-```
-Smith Hel Flame the Restless
+Check Node.js:
+
+```bash
+node -v
 ```
 
-Names are **cosmetic only** and have no protocol meaning.
-
 ---
 
-## Requirements
-
-- Python **3.9+**
-- pip
-- (Optional) Cloudflared for global access
-
----
-
-## Installation
+## 📥 Installation
 
 Clone the repository:
 
 ```bash
-git clone https://github.com/YOURNAME/Aure.git
-cd Aure
-```
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
+git clone https://github.com/Thomas-nada/aure/tree/V.1.0
+cd aure
+npm install
 ```
 
 ---
 
-## Running a Node (Mining Starts Automatically)
+## 📁 Data Storage
 
-```bash
-python node.py
+Each node stores its own data in a port-specific directory:
+
+```
+data/
+ ├─ 6000/
+ │   ├─ ledger.json
+ │   └─ peers.json
+ ├─ 6001/
+ │   ├─ ledger.json
+ │   └─ peers.json
 ```
 
-That’s it.
+This allows multiple nodes to run on the same machine without conflict.
+
+---
+
+## 🌐 Networking Concepts (Important)
+
+* `127.0.0.1` refers to **the local machine only**
+* Nodes on **different machines** must use a **real IP address**
+* One node acts as a **seed node** to help others discover the network
+* After initial discovery, the network can function **without the seed**
+
+---
+
+## 🌍 Finding Your Public IP
+
+You will need this if your node should accept connections from other machines.
+
+### Linux / macOS
+
+```bash
+curl ifconfig.me
+```
+
+### Windows (PowerShell)
+
+```powershell
+curl ifconfig.me
+```
+
+You can also use:
+
+* [https://whatismyipaddress.com](https://whatismyipaddress.com)
+
+---
+
+## 🟢 Seed Node (Recommended Setup)
+
+The **seed node** is the first node in the network.
+It is recommended to run the seed on a machine with:
+
+* A **static or long-lived public IP**
+* A **VM, VPS, or cloud instance**
+* An open TCP port (default: 6000)
+
+This ensures new peers can always find the network.
+
+---
+
+## ▶️ Starting a Seed Node
+
+### Linux / macOS
+
+```bash
+P2P_PORT=6000 node p2p_node.js
+```
+
+### Windows (PowerShell)
+
+```powershell
+$env:P2P_PORT=6000; node p2p_node.js
+```
+
+Leave this node running.
+
+---
+
+## 🔵 Starting Peer Nodes
+
+Peer nodes connect to an existing seed node to discover the network.
+
+Replace `SEED_IP` with the **IP address of the seed node**.
+
+### Linux / macOS
+
+```bash
+P2P_PORT=6001 SEED_PEERS=SEED_IP:6000 node p2p_node.js
+```
+
+### Windows (PowerShell)
+
+```powershell
+$env:P2P_PORT=6001; $env:SEED_PEERS="SEED_IP:6000"; node p2p_node.js
+```
+
+You can run multiple peers by changing the port:
+
+```
+6002, 6003, 6008, etc.
+```
+
+---
+
+## 🔁 Restarting Nodes (No Seed Required)
+
+Once a node has successfully connected at least once, it remembers peers.
+
+On restart, you can simply run:
+
+### Linux / macOS
+
+```bash
+P2P_PORT=6001 node p2p_node.js
+```
+
+### Windows
+
+```powershell
+$env:P2P_PORT=6001; node p2p_node.js
+```
 
 The node will:
-- generate a random anonymous identity
-- connect to known peers
-- start mining automatically
-- gossip peers to others
+
+* Load its ledger from disk
+* Load known peers
+* Rejoin the network automatically
 
 ---
 
-## Joining the Network
+## ⛏️ Mining
 
-New nodes use a **seed list** to find their first peer.
+Inside any running node, type:
 
-The current seed(s) are listed in:
+* `mine` → mine a single block
+* `c` → start continuous mining
 
-```
-default_seeds.json
-```
-
-Once connected to *any* peer, gossip will propagate the rest of the network.
-
-The seed is **not authoritative** and does not control the network.
+Mining automatically pauses when new blocks are received from the network.
 
 ---
 
-## Running a Public Seed (Optional)
+## 🖥️ Available Commands
 
-If you want others to connect to your node from outside your local network, you can expose it using a **free Cloudflare quick tunnel**.
-
-### Install Cloudflared
-
-https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/
-
----
-
-### Start Aure locally
-
-```bash
-python node.py --port 5000
-```
-
----
-
-### Create a public tunnel
-
-In a **separate terminal**:
-
-```bash
-cloudflared tunnel --url http://localhost:5000
-```
-
-Cloudflared will print a URL like:
-
-```
-https://random-words.trycloudflare.com
-```
-
-This is your **temporary public seed URL**.
+| Command   | Description           |
+| --------- | --------------------- |
+| `help`    | Show help             |
+| `status`  | Node and chain status |
+| `peers`   | Known peers           |
+| `network` | Active connections    |
+| `height`  | Current chain height  |
+| `tip`     | Latest block          |
+| `block`   | Show recent blocks    |
+| `stats`   | Mining statistics     |
+| `uptime`  | Node uptime           |
+| `c`       | Continuous mining     |
+| `ledger`  | Export ledger as JSON |
 
 ---
 
-### Restart Aure advertising the public URL
+## 💾 Persistence Behavior
 
-Stop Aure, then restart:
-
-```bash
-python node.py --port 5000 --advertise https://random-words.trycloudflare.com
-```
-
-Your node is now reachable globally.
-
-⚠️ **Important**:  
-Cloudflare quick tunnels are temporary.  
-If cloudflared stops, the URL stops working and a new one must be created.
+* `ledger.json` stores the blockchain
+* `peers.json` stores known peers
+* Files are written only after successful connections
+* If all nodes crash, the longest valid ledger stored on disk becomes canonical on restart
 
 ---
 
-## Endpoints
+## 🧠 Design Notes (v1.0)
 
-Each node exposes a small HTTP API:
-
-- `/status` – node status (height, difficulty, peers)
-- `/chain` – full blockchain
-- `/peers` – known peers
-
-Example:
-
-```bash
-curl http://localhost:5000/status
-```
----
-
-## How the Network Survives
-
-- The seed is only for **initial discovery**
-- Nodes gossip peers to each other
-- Once connected, the network no longer depends on the seed
-- Temporary seed outages do not stop block production
-
-This mirrors how early decentralized networks bootstrap.
-
+* Longest valid chain always wins
+* No leader, no central authority
+* Seed node is only for discovery
+* Network survives seed failure
+* Nodes self-heal when reconnecting
 
 ---
 
-## Final Note
+## 🏷️ Version
 
-Aure is intentionally small and understandable.
+**Aure v1.0**
 
-If you can read the code, you can understand the system.
+This release focuses on:
 
-That is the point.
+* Stability
+* Persistence
+* Correct peer behavior
+* Clean startup and recovery
+
+Future versions may include:
+
+* Transactions
+* Wallets
+* Improved consensus
+* Network hardening
+
+---
+
+## ✅ Getting Started Checklist
+
+You’re fully set up when you can:
+
+* Start a seed node
+* Connect peer nodes
+* Mine blocks
+* Restart nodes without losing the chain
+* See peers automatically reconnect
+
+  
