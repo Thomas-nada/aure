@@ -132,18 +132,18 @@ Leave this node running.
 
 Peer nodes connect to an existing seed node to discover the network.
 
-Replace `SEED_IP` with the **IP address of the seed node**.
+Replace `SEED_IP` with the **IP address of your seed node** if you want to run your own aeparate blockchain.
 
 ### Linux / macOS
 
 ```bash
-P2P_PORT=6001 SEED_PEERS=SEED_IP:6000 node p2p_node.js
+P2P_PORT=6001 SEED_PEERS="16.171.60.136:6000" node p2p_node.js
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-$env:P2P_PORT=6001; $env:SEED_PEERS="SEED_IP:6000"; node p2p_node.js
+$env:P2P_PORT=6001; $env:SEED_PEERS="16.171.60.136:6000"; node p2p_node.js
 ```
 
 You can run multiple peers by changing the port:
