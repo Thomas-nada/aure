@@ -1,0 +1,12 @@
+{
+  "name": "decentralized-node",
+  "version": "1.0.0",
+  "description": "A truly decentralized blockchain peer running on Node.js.",
+  "main": "p2p_node.js",
+  "scripts": {
+    "start": "node p2p_node.js"
+  },
+  "dependencies": {
+    "crypto-js": "^4.1.1"
+  }
+}
