@@ -1,0 +1,14 @@
+# Node dependencies
+node_modules/
+
+# Runtime blockchain data
+data/
+ledger.json
+peers.json
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
