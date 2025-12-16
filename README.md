@@ -1,32 +1,45 @@
 # Aure v1.0
 
-*A simple peer-to-peer blockchain network*
+> ⚠️ **IMPORTANT — READ BEFORE STARTING**
+>
+> **Starting a seed node creates a NEW and SEPARATE Aure blockchain.**
+>
+> - If you want to **join the existing public Aure network**, **DO NOT start a seed node**.
+> - If you start your own seed, you will be running an **independent network** that will NOT connect to the public Aure chain.
+>
+> 👉 Choose **Option A** only if you intentionally want your own blockchain.  
+> 👉 Choose **Option B** if you want to connect to the existing Aure network.
 
-Aure is a minimal peer-to-peer blockchain written in Node.js.
-Each node can mine blocks, synchronize with peers, recover after crashes, and persist its ledger and peer list to disk.
 
-This guide walks you through **everything needed to get started**, step by step, on **Linux/macOS** and **Windows**.
+
+Aure is a minimal peer-to-peer blockchain written in Node.js. Each node can mine blocks, synchronize with peers, recover after crashes, and persist its ledger and peer list to disk.
+
+This README clearly documents **two distinct use cases**:
+
+1. **Running your own Aure blockchain** (your own seed, your own network)
+2. **Connecting to the existing public Aure network**
+
+Follow the section that applies to you.
 
 ---
 
 ## ✨ Features (v1.0)
 
 * Peer-to-peer TCP network
-* Continuous or manual mining
+* Manual or continuous mining
 * Automatic chain synchronization (longest chain wins)
-* Persistent ledger (`ledger.json`)
+* Persistent blockchain storage (`ledger.json`)
 * Persistent peer discovery (`peers.json`)
-* Survives crashes and restarts
-* Human-readable miner identities
-* Interactive command-line interface
+* Crash-safe restarts
+* Interactive CLI
 
 ---
 
 ## 📦 Requirements
 
 * **Node.js v18+** (v20 recommended)
-* A terminal (Linux/macOS) or PowerShell (Windows)
-* Network connectivity between peers
+* Terminal (Linux/macOS) or PowerShell (Windows)
+* Public network connectivity (for peer-to-peer operation)
 
 Check Node.js:
 
@@ -38,10 +51,8 @@ node -v
 
 ## 📥 Installation
 
-Clone the repository:
-
 ```bash
-git clone https://github.com/Thomas-nada/aure/tree/main
+git clone https://github.com/Thomas-nada/aure.git
 cd aure
 npm install
 ```
@@ -50,7 +61,7 @@ npm install
 
 ## 📁 Data Storage
 
-Each node stores its own data in a port-specific directory:
+Each node stores data in a directory named after its port:
 
 ```
 data/
@@ -62,22 +73,27 @@ data/
  │   └─ peers.json
 ```
 
-This allows multiple nodes to run on the same machine without conflict.
+This allows multiple nodes to run on the same machine without conflicts.
 
 ---
 
-## 🌐 Networking Concepts (Important)
+## 🌐 Networking Model (Important)
 
-* `127.0.0.1` refers to **the local machine only**
-* Nodes on **different machines** must use a **real IP address**
-* One node acts as a **seed node** to help others discover the network
-* After initial discovery, the network can function **without the seed**
+Aure does **not** auto-detect your public IP.
+
+Every node must be started with:
+
+* `PUBLIC_IP` – the publicly reachable IP of the machine
+* `P2P_PORT` – the TCP port the node listens on
+* `SEED_PEERS` – peers used only for **initial discovery**
+
+If you start your own seed node, you create a **new and separate Aure network**.
 
 ---
 
-## 🌍 Finding Your Public IP
+## 🌍 How to Find Your Public IP
 
-You will need this if your node should accept connections from other machines.
+Each node operator must know **their own public IP**.
 
 ### Linux / macOS
 
@@ -91,140 +107,159 @@ curl ifconfig.me
 curl ifconfig.me
 ```
 
-You can also use:
+You may also use any IP-checking website (e.g. whatismyipaddress.com).
 
-* [https://whatismyipaddress.com](https://whatismyipaddress.com)
-
----
-
-## 🟢 Seed Node (Recommended Setup)
-
-The **seed node** is the first node in the network.
-It is recommended to run the seed on a machine with:
-
-* A **static or long-lived public IP**
-* A **VM, VPS, or cloud instance**
-* An open TCP port (default: 6000)
-
-This ensures new peers can always find the network.
+Use the returned value wherever `PUBLIC_IP` is required.
 
 ---
 
-## ▶️ Starting a Seed Node
+# 🟢 Option A: Run Your Own Aure Network (Custom Seed)
 
-### Linux / macOS
+Choose this option **only if you want to start an independent Aure blockchain**.
+
+Anyone who connects to your seed will join **your private network**, not the public Aure network.
+
+### Start Seed Node (One-Liners)
+
+Pick a machine with a public IP and an open TCP port.
+
+#### Mac / Linux
 
 ```bash
-P2P_PORT=6000 node p2p_node.js
+PUBLIC_IP="PUBLIC_IP" P2P_PORT=6000 node p2p_node.js
 ```
 
-### Windows (PowerShell)
+#### Windows (PowerShell)
 
 ```powershell
-$env:P2P_PORT=6000; node p2p_node.js
+$env:PUBLIC_IP="PUBLIC_IP"; $env:P2P_PORT=6000; node p2p_node.js
 ```
 
 Leave this node running.
 
+This node becomes the **genesis seed** of your Aure network.
+
+### Connecting Peers to Your Custom Network
+
+Peers must use **your seed’s IP and port** in `SEED_PEERS`.
+
+Example format:
+
+```
+SEED_PUBLIC_IP:6000
+```
+
 ---
 
-## 🔵 Starting Peer Nodes
+# 🔵 Option B: Connect to the Existing Aure Network
 
-Peer nodes connect to an existing seed node to discover the network.
+Choose this option if you simply want to **run a node on the existing public Aure network**.
 
-Replace `SEED_IP` with the **IP address of your seed node** if you want to run your own aeparate blockchain.
+⚠️ Do **not** start your own seed node in this case.
 
-### Linux / macOS
+---
+
+## 🟢 Public Aure Seed Node
+
+The public Aure network uses a **fixed, known seed node**.
+
+**Seed PUBLIC_IP:** `16.171.60.136`
+
+---
+
+## ▶️ Start Peer Node (One-Liners)
+
+Peer operators only need to set **their own public IP**.
+
+### Mac / Linux
 
 ```bash
-P2P_PORT=6001 SEED_PEERS="16.171.60.136:6000" node p2p_node.js
+PUBLIC_IP="YOUR_PUBLIC_IP" P2P_PORT=6001 SEED_PEERS="16.171.60.136:6000" node p2p_node.js
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-$env:P2P_PORT=6001; $env:SEED_PEERS="16.171.60.136:6000"; node p2p_node.js
+$env:PUBLIC_IP="YOUR_PUBLIC_IP"; $env:P2P_PORT=6001; $env:SEED_PEERS="16.171.60.136:6000"; node p2p_node.js
 ```
 
-You can run multiple peers by changing the port:
+Run additional peers by changing the port:
 
 ```
-6002, 6003, 6008, etc.
+6002, 6003, 6004, ...
 ```
+
+Each peer must use a **unique port**.
 
 ---
 
-## 🔁 Restarting Nodes (No Seed Required)
+## 🔁 Restarting Nodes
 
-Once a node has successfully connected at least once, it remembers peers.
+After a node has connected once, it remembers peers on disk.
 
-On restart, you can simply run:
+On restart, you can omit `SEED_PEERS`.
 
-### Linux / macOS
+### Mac / Linux
 
 ```bash
-P2P_PORT=6001 node p2p_node.js
+PUBLIC_IP="YOUR_PUBLIC_IP" P2P_PORT=6001 node p2p_node.js
 ```
 
-### Windows
+### Windows (PowerShell)
 
 ```powershell
-$env:P2P_PORT=6001; node p2p_node.js
+$env:PUBLIC_IP="YOUR_PUBLIC_IP"; $env:P2P_PORT=6001; node p2p_node.js
 ```
 
-The node will:
-
-* Load its ledger from disk
-* Load known peers
-* Rejoin the network automatically
+The node will automatically reload its blockchain and reconnect.
 
 ---
 
 ## ⛏️ Mining
 
-Inside any running node, type:
+Inside any running node:
 
 * `mine` → mine a single block
-* `c` → start continuous mining
+* `c` → continuous mining
 
-Mining automatically pauses when new blocks are received from the network.
-
----
-
-## 🖥️ Available Commands
-
-| Command   | Description           |
-| --------- | --------------------- |
-| `help`    | Show help             |
-| `status`  | Node and chain status |
-| `peers`   | Known peers           |
-| `network` | Active connections    |
-| `height`  | Current chain height  |
-| `tip`     | Latest block          |
-| `block`   | Show recent blocks    |
-| `stats`   | Mining statistics     |
-| `uptime`  | Node uptime           |
-| `c`       | Continuous mining     |
-| `ledger`  | Export ledger as JSON |
+Mining pauses automatically when new blocks arrive from peers.
 
 ---
 
-## 💾 Persistence Behavior
+## 🖥️ CLI Commands
 
-* `ledger.json` stores the blockchain
-* `peers.json` stores known peers
-* Files are written only after successful connections
-* If all nodes crash, the longest valid ledger stored on disk becomes canonical on restart
+| Command   | Description         |
+| --------- | ------------------- |
+| `help`    | Show help           |
+| `status`  | Node & chain status |
+| `peers`   | Known peers         |
+| `network` | Active connections  |
+| `height`  | Chain height        |
+| `tip`     | Latest block        |
+| `block`   | Recent blocks       |
+| `stats`   | Mining statistics   |
+| `uptime`  | Node uptime         |
+| `c`       | Continuous mining   |
+| `ledger`  | Export ledger       |
 
 ---
 
-## 🧠 Design Notes (v1.0)
+## 💾 Persistence
 
-* Longest valid chain always wins
-* No leader, no central authority
-* Seed node is only for discovery
-* Network survives seed failure
-* Nodes self-heal when reconnecting
+* Blockchain stored in `ledger.json`
+* Peer list stored in `peers.json`
+* Files written after successful connections
+* Longest valid chain wins on restart
+
+---
+
+## 🧠 Design Notes
+
+* Fully decentralized
+* No leader or coordinator
+* Seed node is used only for discovery
+* Networks are isolated by seed choice
+* Nodes self-heal on reconnect
 
 ---
 
@@ -232,30 +267,15 @@ Mining automatically pauses when new blocks are received from the network.
 
 **Aure v1.0**
 
-This release focuses on:
+Focus:
 
-* Stability
-* Persistence
-* Correct peer behavior
-* Clean startup and recovery
-
-Future versions may include:
-
-* Transactions
-* Wallets
-* Improved consensus
-* Network hardening
+* Correct peer connectivity
+* Explicit network bootstrapping
+* Reliable persistence and recovery
 
 ---
 
-## ✅ Getting Started Checklist
+## ✅ Quick Decision Guide
 
-You’re fully set up when you can:
-
-* Start a seed node
-* Connect peer nodes
-* Mine blocks
-* Restart nodes without losing the chain
-* See peers automatically reconnect
-
-  
+* Want your **own blockchain** → Option A (Custom Seed)
+* Want to **join Aure** → Option B (Public Network)
