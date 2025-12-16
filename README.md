@@ -41,7 +41,7 @@ node -v
 Clone the repository:
 
 ```bash
-git clone https://github.com/Thomas-nada/aure/tree/V.1.0
+git clone https://github.com/Thomas-nada/aure/tree/main
 cd aure
 npm install
 ```
