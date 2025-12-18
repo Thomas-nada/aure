@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aure Node</title>
+
+<style>
+:root{
+  --bg:#020617;
+  --panel:#020617;
+  --border:#1f2937;
+  --accent:#facc15;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --success:#22c55e;
+  --danger:#ef4444;
+  --warn:#f97316;
+  --blue:#60a5fa;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  padding:24px;
+  font-family:system-ui,sans-serif;
+  background:radial-gradient(circle at top,#111827,#020617);
+  color:var(--text);
+}
+
+h1{ margin:0 0 14px; color:var(--accent); }
+
+button, select, input{
+  margin:4px;
+  padding:8px 10px;
+  background:#111827;
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:6px;
+}
+
+button:hover{ border-color:var(--accent); cursor:pointer; }
+
+input{
+  width:min(420px, 100%);
+}
+
+.panel{
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px;
+  margin-top:12px;
+  background:linear-gradient(180deg,#111827,#020617);
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  gap:12px;
+  margin-top:12px;
+}
+
+pre{
+  background:#000;
+  padding:10px;
+  border-radius:8px;
+  max-height:320px;
+  overflow:auto;
+  font-size:12px;
+  line-height:1.35;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+canvas{
+  width:100%;
+  height:200px;
+  background:#000;
+  border-radius:8px;
+}
+
+.mine{ color:var(--success); font-weight:bold; }
+.good{ color:var(--success); }
+.bad{ color:var(--danger); font-weight:bold; }
+.warn{ color:var(--warn); }
+.muted{ color:var(--muted); }
+
+.blockRow{
+  cursor:pointer;
+  padding:2px 0;
+}
+
+.blockRow:hover{
+  background:rgba(250, 204, 21, 0.08);
+}
+
+.kv{
+  display:grid;
+  grid-template-columns: 140px 1fr;
+  gap:6px 10px;
+  margin-top:8px;
+  font-size:13px;
+}
+
+.kv div:nth-child(odd){ color:var(--muted); }
+
+.badge{
+  display:inline-block;
+  padding:3px 8px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  margin:3px 6px 3px 0;
+  font-size:12px;
+  background:#0b1220;
+}
+
+hr.sep{
+  border:none;
+  border-top:1px solid var(--border);
+  margin:10px 0;
+}
+</style>
+</head>
+
+<body>
+
+<h1>⛏ Aure Node</h1>
+
+<div class="panel">
+  <button onclick="manualConnect()">Connect</button>
+  <button onclick="disconnect()">Disconnect</button>
+  <button onclick="mineSingle()">Mine single block</button>
+  <button onclick="startContinuous()">Start continuous mining</button>
+  <button onclick="stopMining()">Stop mining</button>
+  <button onclick="toggleLedger()">View full ledger</button>
+  <button onclick="toggleMyHistory()">My node history</button>
+
+  <select id="profileSelect" onchange="setProfile(this.value)">
+    <option value="eco">🐢 Eco</option>
+    <option value="normal" selected>⚖ Normal</option>
+    <option value="aggressive">🚀 Aggressive</option>
+  </select>
+
+  <input id="searchBox" placeholder="Search blocks by height, miner, hash prefix…" oninput="searchBlocks(this.value)" />
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <b>Node</b>
+    <div class="kv">
+      <div>Status</div><div><span id="status">Disconnected</span></div>
+      <div>ID</div><div><span id="nodeId">-</span></div>
+      <div>Mode</div><div><span id="mode">OFF</span></div>
+      <div>Profile</div><div><span id="profileLabel">Normal</span></div>
+      <div>Hashes/sec</div><div><span id="hashrate">0</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <b>Block</b>
+    <div class="kv">
+      <div>Height</div><div><span id="height">-</span></div>
+      <div>Difficulty</div><div><span id="difficulty">-</span></div>
+      <div>Round time</div><div><span id="roundTime">0</span>s</div>
+      <div>Chain status</div><div><span id="chainStatus" class="muted">No data</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <b>Peers</b>
+    <pre id="peers">-</pre>
+  </div>
+
+  <div class="panel">
+    <b>Recent winners</b>
+    <pre id="winners"></pre>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <b>⏱ Block time (s)</b>
+    <canvas id="blockTimeChart"></canvas>
+    <div class="muted" style="margin-top:6px;font-size:12px;">
+      Computed from consecutive block timestamps (from chain).
+    </div>
+  </div>
+
+  <div class="panel">
+    <b>⚙ Difficulty</b>
+    <canvas id="difficultyChart"></canvas>
+    <div class="muted" style="margin-top:6px;font-size:12px;">
+      Per-block difficulty values (from chain).
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <b>Ledger Explorer (click blocks)</b>
+    <pre id="ledgerExplorer">Waiting for chain…</pre>
+  </div>
+
+  <div class="panel">
+    <b>Selected block</b>
+    <pre id="blockDetails">Click a block in the Ledger Explorer.</pre>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <b>My Stats</b>
+    <div class="kv">
+      <div>Blocks mined</div><div><span id="statBlocks">0</span></div>
+      <div>Win %</div><div><span id="statWinPct">0.0</span>%</div>
+      <div>Avg win difficulty</div><div><span id="statAvgDiff">-</span></div>
+      <div>Blocks since last win</div><div><span id="statDrought">-</span></div>
+      <div>Current win streak</div><div><span id="statStreak">0</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <b>🏆 Achievements</b>
+    <div id="badgeList" style="margin-top:8px;"></div>
+    <hr class="sep" />
+    <div class="muted" style="font-size:12px;">
+      Badges are local to this browser (persisted in localStorage).
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="ledgerPanel" style="display:none;">
+  <b>📜 Full Ledger (raw)</b>
+  <pre id="fullLedger">-</pre>
+</div>
+
+<div class="panel" id="myHistoryPanel" style="display:none;">
+  <b>🧑‍💻 My Node History</b>
+  <pre id="myHistory">-</pre>
+</div>
+
+<script>
+/* ======================
+   CONFIG
+====================== */
+const SERVER_URL = "ws://16.171.60.136:8080";
+const RECONNECT_DELAY = 2000;
+
+/* ======================
+   STATE
+====================== */
+let ws = null;
+let worker = null;
+let currentTemplate = null;
+
+let miningIntent = "off"; // "off" | "single" | "continuous"
+let profile = "normal";   // "eco" | "normal" | "aggressive"
+
+let hashes = 0;
+let lastTick = Date.now();
+let roundStart = 0;
+
+let reconnectTimer = null;
+let manuallyDisconnected = false;
+
+let chain = [];
+let verified = [];          // boolean per index
+let verifyErrors = [];      // string per index (optional)
+let blockTimes = [];
+let difficulties = [];
+let myBlocks = [];
+
+let selectedIndex = -1;
+let explorerFilter = "";
+
+// achievements persisted locally
+const BADGE_KEY = "aure-badges-v1";
+let badges = JSON.parse(localStorage.getItem(BADGE_KEY) || "[]");
+
+/* ======================
+   DOM
+====================== */
+const statusEl = document.getElementById("status");
+const nodeIdEl = document.getElementById("nodeId");
+const modeEl = document.getElementById("mode");
+const profileLabelEl = document.getElementById("profileLabel");
+const hashrateEl = document.getElementById("hashrate");
+
+const heightEl = document.getElementById("height");
+const difficultyEl = document.getElementById("difficulty");
+const roundTimeEl = document.getElementById("roundTime");
+const chainStatusEl = document.getElementById("chainStatus");
+
+const peersEl = document.getElementById("peers");
+const winnersEl = document.getElementById("winners");
+
+const ledgerExplorerEl = document.getElementById("ledgerExplorer");
+const blockDetailsEl = document.getElementById("blockDetails");
+
+const statBlocksEl = document.getElementById("statBlocks");
+const statWinPctEl = document.getElementById("statWinPct");
+const statAvgDiffEl = document.getElementById("statAvgDiff");
+const statDroughtEl = document.getElementById("statDrought");
+const statStreakEl = document.getElementById("statStreak");
+
+const badgeListEl = document.getElementById("badgeList");
+
+const fullLedgerEl = document.getElementById("fullLedger");
+const myHistoryEl = document.getElementById("myHistory");
+
+const blockTimeCanvas = document.getElementById("blockTimeChart");
+const difficultyCanvas = document.getElementById("difficultyChart");
+
+/* ======================
+   IDENTITY
+====================== */
+let nodeId = localStorage.getItem("aure-node-id");
+if (!nodeId) {
+  nodeId = crypto.randomUUID();
+  localStorage.setItem("aure-node-id", nodeId);
+}
+nodeIdEl.textContent = nodeId;
+
+/* ======================
+   UI TOGGLES
+====================== */
+function toggleLedger() {
+  const p = document.getElementById("ledgerPanel");
+  p.style.display = (p.style.display === "none") ? "block" : "none";
+}
+function toggleMyHistory() {
+  const p = document.getElementById("myHistoryPanel");
+  p.style.display = (p.style.display === "none") ? "block" : "none";
+}
+
+/* ======================
+   PROFILE
+====================== */
+function setProfile(p) {
+  profile = p;
+  profileLabelEl.textContent =
+    p === "eco" ? "Eco" : p === "normal" ? "Normal" : "Aggressive";
+
+  // If currently mining, restarting worker applies new throttle immediately
+  if (worker && miningIntent !== "off" && currentTemplate && ws && ws.readyState === WebSocket.OPEN) {
+    startWorker();
+  }
+}
+
+function getWorkerDelayMs() {
+  if (profile === "eco") return 20;
+  if (profile === "normal") return 5;
+  return 0; // aggressive
+}
+
+/* ======================
+   CONNECTION
+====================== */
+function manualConnect() {
+  manuallyDisconnected = false;
+  connect();
+}
+
+function connect() {
+  if (ws && ws.readyState === WebSocket.OPEN) return;
+
+  statusEl.innerHTML = `<span class="warn">Connecting…</span>`;
+  ws = new WebSocket(SERVER_URL);
+
+  ws.onopen = () => {
+    statusEl.textContent = "Connected";
+  };
+
+  ws.onmessage = async (e) => {
+    let msg;
+    try { msg = JSON.parse(e.data); } catch { return; }
+
+    if (msg.type === "peer_update") {
+      peersEl.textContent = msg.peers.join("\n");
+    }
+
+    if (msg.type === "start_block") {
+      currentTemplate = msg.data;
+      heightEl.textContent = msg.data.height;
+      difficultyEl.textContent = msg.data.difficulty;
+      roundStart = Date.now();
+
+      // Resume mining only if continuous intent
+      if (miningIntent === "continuous") startWorker();
+    }
+
+    if (msg.type === "block_won") {
+      const mine = (msg.miner === nodeId);
+      const line = `#${msg.height} → ${msg.miner}\n`;
+      if (mine) {
+        winnersEl.innerHTML += `<span class="mine">${escapeHtml(line)}</span>`;
+      } else {
+        winnersEl.textContent += line;
+      }
+
+      // Single mining stops after one win (does not repeat)
+      if (miningIntent === "single") {
+        miningIntent = "off";
+        modeEl.textContent = "OFF";
+        stopWorker();
+      }
+
+      // achievements can be unlocked from wins too (but final truth comes from chain_update)
+      if (mine) unlockBadge("First block");
+    }
+
+    if (msg.type === "chain_update") {
+      chain = msg.chain;
+
+      // Verify + compute derived arrays + render everything
+      await verifyAndDerive();
+      renderAll();
+    }
+  };
+
+  ws.onerror = handleDisconnect;
+  ws.onclose = handleDisconnect;
+}
+
+function handleDisconnect() {
+  stopWorker();
+  currentTemplate = null;
+
+  if (manuallyDisconnected) {
+    statusEl.textContent = "Disconnected";
+    return;
+  }
+
+  if (reconnectTimer) return;
+
+  statusEl.innerHTML = `<span class="warn">Reconnecting…</span>`;
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    connect();
+  }, RECONNECT_DELAY);
+}
+
+function disconnect() {
+  manuallyDisconnected = true;
+  stopMining();
+  ws?.close();
+  statusEl.textContent = "Disconnected";
+}
+
+/* ======================
+   MINING CONTROLS
+====================== */
+function mineSingle() {
+  if (!currentTemplate || !ws || ws.readyState !== WebSocket.OPEN) return;
+  miningIntent = "single";
+  modeEl.textContent = "Single";
+  startWorker();
+}
+
+function startContinuous() {
+  miningIntent = "continuous";
+  modeEl.textContent = "Continuous";
+  if (currentTemplate && ws && ws.readyState === WebSocket.OPEN) startWorker();
+}
+
+function stopMining() {
+  miningIntent = "off";
+  modeEl.textContent = "OFF";
+  stopWorker();
+}
+
+function stopWorker() {
+  worker?.terminate();
+  worker = null;
+}
+
+/* ======================
+   WORKER (MINING)
+====================== */
+function startWorker() {
+  stopWorker();
+  hashes = 0;
+
+  const delay = getWorkerDelayMs();
+
+  const code = `
+    self.onmessage = async (e) => {
+      const b = e.data;
+      let nonce = 0;
+      const delayMs = ${delay};
+
+      async function sha256(s){
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+        return Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,"0")).join("");
+      }
+
+      while (true) {
+        const h = await sha256(b.height + b.prevHash + b.timestamp + nonce + b.miner);
+        self.postMessage("hash");
+
+        if (h.startsWith("0".repeat(b.difficulty))) {
+          self.postMessage({ type: "found", block: { ...b, nonce } });
+          break;
+        }
+
+        nonce++;
+        if (delayMs) await new Promise(r => setTimeout(r, delayMs));
+      }
+    };
+  `;
+
+  worker = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+
+  worker.onmessage = (e) => {
+    if (e.data === "hash") {
+      hashes++;
+      const now = Date.now();
+      if (now - lastTick > 1000) {
+        hashrateEl.textContent = hashes;
+        hashes = 0;
+        lastTick = now;
+      }
+    }
+
+    if (e.data?.type === "found") {
+      // Always submit with our nodeId as miner
+      const payload = {
+        type: "submit_block",
+        data: { ...e.data.block, miner: nodeId }
+      };
+      try { ws.send(JSON.stringify(payload)); } catch {}
+    }
+  };
+
+  worker.postMessage({ ...currentTemplate, miner: nodeId });
+}
+
+/* ======================
+   ROUND TIMER
+====================== */
+setInterval(() => {
+  if (!roundStart) return;
+  roundTimeEl.textContent = Math.floor((Date.now() - roundStart) / 1000);
+}, 1000);
+
+/* ======================
+   SEARCH + EXPLORER
+====================== */
+function searchBlocks(q) {
+  explorerFilter = (q || "").trim().toLowerCase();
+  renderLedgerExplorer();
+  // keep selected block details visible even when filtering; if filtered out, details remain.
+}
+
+function selectBlock(i) {
+  selectedIndex = i;
+  renderSelectedBlock();
+  renderLedgerExplorer(); // re-render to keep highlight consistent
+}
+
+/* ======================
+   VERIFICATION + DERIVATION
+====================== */
+async function verifyAndDerive() {
+  verified = [];
+  verifyErrors = [];
+  blockTimes = [];
+  difficulties = [];
+  myBlocks = [];
+
+  if (!Array.isArray(chain) || chain.length === 0) {
+    chainStatusEl.innerHTML = `<span class="muted">No data</span>`;
+    return;
+  }
+
+  // genesis assumed valid
+  verified[0] = true;
+  verifyErrors[0] = "";
+
+  // collect streak info later in stats
+  for (let i = 1; i < chain.length; i++) {
+    const prev = chain[i - 1];
+    const b = chain[i];
+
+    // derive times + difficulty
+    const dt = Math.round((b.timestamp - prev.timestamp) / 1000);
+    blockTimes.push(Math.max(0, dt));
+    difficulties.push(b.difficulty);
+
+    // mine ownership
+    if (b.miner === nodeId) myBlocks.push(b);
+
+    // verify hash + linkage + difficulty
+    const recomputed = await sha256(
+      String(b.height) + String(b.prevHash) + String(b.timestamp) + String(b.nonce) + String(b.miner)
+    );
+
+    let ok = true;
+    let err = "";
+
+    if (recomputed !== b.hash) {
+      ok = false; err = "hash mismatch";
+    } else if (b.prevHash !== prev.hash) {
+      ok = false; err = "prevHash mismatch";
+    } else if (!recomputed.startsWith("0".repeat(b.difficulty))) {
+      ok = false; err = "difficulty invalid";
+    }
+
+    verified[i] = ok;
+    verifyErrors[i] = err;
+  }
+
+  const badIndex = verified.findIndex(v => v === false);
+  if (badIndex === -1) {
+    chainStatusEl.innerHTML = `<span class="good">✔ Verified</span>`;
+  } else {
+    chainStatusEl.innerHTML = `<span class="bad">✖ Invalid at #${chain[badIndex]?.height ?? badIndex} (${verifyErrors[badIndex] || "unknown"})</span>`;
+  }
+}
+
+/* ======================
+   RENDERING
+====================== */
+function renderAll() {
+  renderLedgerExplorer();
+  renderSelectedBlock();
+  renderFullLedgerRaw();
+  renderMyHistory();
+  renderStats();
+  renderBadges();
+  drawCharts();
+}
+
+function renderLedgerExplorer() {
+  if (!chain || chain.length === 0) {
+    ledgerExplorerEl.textContent = "Waiting for chain…";
+    return;
+  }
+
+  // Build lines (clickable via inline onclick)
+  // We use innerHTML so we can color + clickable rows
+  let html = "";
+  for (let i = 0; i < chain.length; i++) {
+    const b = chain[i];
+    const ok = verified[i] !== false;
+    const mine = b.miner === nodeId;
+
+    // For filter: match height, miner, hash prefix
+    const hay = (`${b.height} ${b.miner} ${b.hash}`).toLowerCase();
+    if (explorerFilter && !hay.includes(explorerFilter)) continue;
+
+    const statusIcon = ok ? "✔" : "✖";
+    const cls = ok ? "good" : "bad";
+    const mineCls = mine ? " mine" : "";
+    const selected = (i === selectedIndex) ? "background:rgba(96,165,250,0.12);" : "";
+
+    const shortHash = (b.hash || "").slice(0, 12);
+    html += `<div class="blockRow ${cls}${mineCls}" style="${selected}" onclick="selectBlock(${i})">` +
+            `${statusIcon} #${b.height} ${escapeHtml(shortHash)}… → ${escapeHtml(b.miner)}` +
+            `</div>`;
+  }
+
+  if (!html) html = `<span class="muted">No blocks match search.</span>`;
+  ledgerExplorerEl.innerHTML = html;
+}
+
+function renderSelectedBlock() {
+  if (!chain || chain.length === 0) {
+    blockDetailsEl.textContent = "No chain yet.";
+    return;
+  }
+  if (selectedIndex < 0 || selectedIndex >= chain.length) {
+    blockDetailsEl.textContent = "Click a block in the Ledger Explorer.";
+    return;
+  }
+
+  const b = chain[selectedIndex];
+  const ok = verified[selectedIndex] !== false;
+  const mine = b.miner === nodeId;
+
+  const header =
+    `${ok ? "✔ VERIFIED" : "✖ INVALID"}  |  ${mine ? "MINE" : "OTHER"}\n` +
+    `--------------------------------\n`;
+
+  blockDetailsEl.textContent = header + JSON.stringify(b, null, 2) +
+    (ok ? "" : `\n\nError: ${verifyErrors[selectedIndex] || "unknown"}`);
+}
+
+function renderFullLedgerRaw() {
+  if (!chain || chain.length === 0) {
+    fullLedgerEl.textContent = "-";
+    return;
+  }
+
+  fullLedgerEl.textContent = chain.map(b => `
+#${b.height}
+ Miner: ${b.miner}
+ Hash: ${b.hash}
+ Prev: ${b.prevHash}
+ Nonce: ${b.nonce}
+ Difficulty: ${b.difficulty}
+ Time: ${new Date(b.timestamp).toLocaleString()}
+`).join("\n--------------------------------\n");
+}
+
+function renderMyHistory() {
+  if (!myBlocks || myBlocks.length === 0) {
+    myHistoryEl.textContent = "No blocks mined by this node yet.";
+    return;
+  }
+
+  myHistoryEl.textContent = myBlocks.map(b => `
+#${b.height}
+ Hash: ${b.hash}
+ Difficulty: ${b.difficulty}
+ Time: ${new Date(b.timestamp).toLocaleString()}
+`).join("\n----------------------\n");
+}
+
+/* ======================
+   STATS (Per-node)
+====================== */
+function renderStats() {
+  const totalBlocks = Math.max(0, (chain?.length || 0) - 1); // excluding genesis
+  const mined = myBlocks.length;
+
+  statBlocksEl.textContent = String(mined);
+  statWinPctEl.textContent =
+    totalBlocks > 0 ? ((mined / totalBlocks) * 100).toFixed(1) : "0.0";
+
+  if (mined > 0) {
+    const avg = myBlocks.reduce((a,b)=>a + (Number(b.difficulty)||0), 0) / mined;
+    statAvgDiffEl.textContent = avg.toFixed(2);
+  } else {
+    statAvgDiffEl.textContent = "-";
+  }
+
+  // drought: blocks since last win (by height, excluding genesis)
+  if (mined > 0) {
+    const last = myBlocks[myBlocks.length - 1];
+    const currentHeight = (chain.length - 1);
+    statDroughtEl.textContent = String(Math.max(0, currentHeight - last.height));
+  } else {
+    statDroughtEl.textContent = "-";
+  }
+
+  // current streak: consecutive blocks at chain tip mined by us
+  let streak = 0;
+  for (let i = chain.length - 1; i >= 1; i--) {
+    if (chain[i].miner === nodeId) streak++;
+    else break;
+  }
+  statStreakEl.textContent = String(streak);
+
+  // Achievements based on stats/verification (truth from chain)
+  evaluateBadges();
+}
+
+/* ======================
+   BADGES / ACHIEVEMENTS
+====================== */
+function unlockBadge(name) {
+  if (!badges.includes(name)) {
+    badges.push(name);
+    localStorage.setItem(BADGE_KEY, JSON.stringify(badges));
+  }
+}
+
+function renderBadges() {
+  if (!badges || badges.length === 0) {
+    badgeListEl.innerHTML = `<span class="muted">No achievements yet.</span>`;
+    return;
+  }
+  badgeListEl.innerHTML = badges.map(b => `<span class="badge">${escapeHtml(b)}</span>`).join("");
+}
+
+function evaluateBadges() {
+  // Only award based on verified chain state
+  // (If chain invalid, we still show badges, but we avoid awarding new ones.)
+  const badIndex = verified.findIndex(v => v === false);
+  if (badIndex !== -1) {
+    renderBadges();
+    return;
+  }
+
+  const mined = myBlocks.length;
+
+  if (mined >= 1) unlockBadge("🥇 First block");
+  if (mined >= 5) unlockBadge("⛏️ 5 blocks");
+  if (mined >= 10) unlockBadge("🧱 Marathon miner (10)");
+
+  // high difficulty win threshold (align with your max 6)
+  if (myBlocks.some(b => (Number(b.difficulty)||0) >= 6)) unlockBadge("🔥 Difficulty 6 win");
+  else if (myBlocks.some(b => (Number(b.difficulty)||0) >= 5)) unlockBadge("⭐ High difficulty win (≥5)");
+
+  // streak badge
+  let streak = 0;
+  for (let i = chain.length - 1; i >= 1; i--) {
+    if (chain[i].miner === nodeId) streak++;
+    else break;
+  }
+  if (streak >= 2) unlockBadge("🍀 Lucky streak (2+)");
+
+  // profile-related badge (local, not consensus)
+  if (profile === "eco") unlockBadge("🐢 Eco miner");
+  if (profile === "aggressive") unlockBadge("🚀 Full throttle");
+
+  renderBadges();
+}
+
+/* ======================
+   CHARTS
+====================== */
+function drawCharts() {
+  drawLine(blockTimeCanvas, blockTimes, "#facc15", "s");
+  drawLine(difficultyCanvas, difficulties, "#60a5fa", "");
+}
+
+function drawLine(canvas, data, color, suffix) {
+  const ctx = canvas.getContext("2d");
+
+  // size canvas to CSS pixels * DPR
+  const cssW = canvas.clientWidth;
+  const cssH = canvas.clientHeight;
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+
+  // reset transform then scale
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr, dpr);
+
+  // clear
+  ctx.clearRect(0,0,cssW,cssH);
+
+  // if insufficient data
+  if (!data || data.length < 2) {
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = "12px system-ui";
+    ctx.fillText("Waiting for enough blocks…", 10, 20);
+    return;
+  }
+
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = (max - min) || 1;
+
+  // axes labels
+  ctx.fillStyle = "#9ca3af";
+  ctx.font = "12px system-ui";
+  ctx.fillText(`${max}${suffix}`, 8, 14);
+  ctx.fillText(`${min}${suffix}`, 8, cssH - 6);
+
+  // line
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+
+  for (let i = 0; i < data.length; i++) {
+    const x = (i / (data.length - 1)) * (cssW - 20) + 10;
+    const y = cssH - 10 - ((data[i] - min) / range) * (cssH - 20);
+    if (i === 0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  }
+
+  ctx.stroke();
+}
+
+/* ======================
+   UTILITIES
+====================== */
+async function sha256(s) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+/* ======================
+   INIT
+====================== */
+setProfile("normal");
+renderBadges();
+connect();
+</script>
+
+</body>
+</html>
