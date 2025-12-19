@@ -1,267 +1,68 @@
-# ⛏ Aure Node (Browser Miner)
+⛏ Aure Node Interface Guide
 
-Aure is an experimental Proof-of-Work blockchain with a **browser-based mining node**.  
-Each node connects to a central Aure server, verifies the blockchain independently, and competes to mine blocks in real time.
+Welcome to the Aure Network. This index.html file is your portal to the decentralized Aure ledger. It allows you to mine new coins, manage your digital assets, and audit the global treasury in real-time.
 
-This repository contains the **Aure HTML Node**, which runs entirely in your browser — no installs, no build steps, no backend required.
+🚀 Getting Started
 
----
+To join the network, simply open the index.html file in any modern web browser (Chrome, Brave, or Firefox recommended).
 
-## 🚀 Getting Started
+1. Connecting to the Live Network
 
-### 1️⃣ Open the node
+By default, this interface is configured to connect to the primary Aure node hosted at:
+16.171.60.136
 
-You can run the node in **any modern browser**:
+Status Indicator: Check the top-left corner of the dashboard. If it says "Live", you are successfully synchronized with the blockchain.
 
-- Open `index.html` locally  
-**or**
-- Host it (GitHub Pages works perfectly)
+Manual Connection: If the connection is lost, a "Network Configuration" window will appear. Ensure the IP address matches your server's current public IP.
 
-Once opened, the node UI will load automatically.
+2. Wallet Setup (Identity)
 
----
+When you first launch the interface, the system will generate a unique Aure Address and a 12-word Recovery Seed.
 
-### 2️⃣ Connect to the Aure network
+CRITICAL: Copy your recovery seed and store it in a safe, offline location. This seed is the only way to recover your funds if you clear your browser data.
 
-Click:
+Secure PIN: Set a 4-6 digit PIN. You will be prompted for this PIN every time you attempt to send a transaction.
 
-```
+💎 Features
 
-Connect
+📊 Dashboard
 
-```
+Network Height: View the current number of blocks in the ledger.
 
-- The node connects to the Aure server via WebSocket
-- Your node is automatically assigned a **persistent Node ID**
-- The node will reconnect automatically if the server restarts
+Treasury: Track the growth of the community treasury (funded by 1% of every block reward and 50% of all transaction fees).
 
-> Your Node ID is stored locally so refreshing the page does NOT create a new identity.
+Rich List: See the top holders on the network.
 
----
+⛏ Mining
 
-### 3️⃣ Start mining
+Continuous Mining: Click "Start Continuous Mining" to contribute your device's hashrate to securing the network.
 
-You have two mining modes:
+Rewards: For every block found, the miner receives 49.50 AUR plus half of all transaction fees included in that block.
 
-#### ⛏ Mine single block
-- Mines **one block only**
-- Stops automatically after a win
-- Useful for testing
+Luck & ETA: The interface provides a real-time estimate of when you might find the next block based on current network difficulty.
 
-#### 🔁 Start continuous mining
-- Mines every new block round
-- Automatically resumes after reconnect
-- Stops only when you click **Stop mining**
+💼 My Wallet
 
----
+Sending Funds: Enter a recipient's AUR... address and the amount. Every transaction carries a flat fee of 1.00 AUR.
 
-## ⚙ Mining Profiles (CPU Control)
+Confirmations: Once sent, transactions appear in your history. As new blocks are mined, the "Confirmation" count will rise. A transaction is generally considered "final" after 6 confirmations.
 
-Choose how aggressively your browser mines:
+Filtering: Use the history filters to view only Sent, Received, or Mining rewards.
 
-| Profile | Description |
-|------|------------|
-| 🐢 **Eco** | Low CPU usage, slower mining |
-| ⚖ **Normal** | Balanced (default) |
-| 🚀 **Aggressive** | Maximum hashing speed |
+🛡 Security Best Practices
 
-Profiles only affect **your browser’s CPU usage**.  
-They do **not** change network rules or difficulty.
+Non-Custodial: Your private keys are stored locally in your browser's encrypted memory. The server never sees your keys.
 
----
+Clearance: If you "Log Out" or clear your browser cache, your wallet will be removed from the device. Ensure your Recovery Seed is backed up before doing this.
 
-## 📊 Dashboard Overview
+Address Checksum: Aure addresses include a built-in checksum. If you mistype a character, the interface will prevent the transaction from being sent to avoid lost funds.
 
-### 🧠 Node Panel
-Shows live information about your node:
+❓ Troubleshooting
 
-- Connection status
-- Node ID
-- Mining mode
-- Mining profile
-- Hashes per second
+"Network Error": Ensure your internet connection is active and that the AWS node at 16.171.60.136 is online.
 
----
+Zero Hashrate: Some browsers may restrict background processing. Keep the tab active or ensure "Hardware Acceleration" is enabled in your browser settings.
 
-### ⛓ Block Panel
-Shows the current block round:
+Transaction Pending: If your transaction has 0 confirmations, it is sitting in the "Mempool." It will be processed as soon as the next block is mined.
 
-- Block height
-- Difficulty
-- Round timer (seconds since block started)
-- Chain verification status
-
----
-
-### 🌐 Peers
-Lists all currently connected nodes (by Node ID).
-
----
-
-### 🏆 Recent Winners
-Shows recently mined blocks:
-
-- Green text = blocks **you mined**
-- Updates live as blocks are found
-
----
-
-## 📜 Ledger & Explorer
-
-### Ledger Explorer
-- Shows every block in the chain
-- Click any block to inspect it
-- Color-coded:
-  - ✔ Green = verified
-  - ✖ Red = invalid
-  - Bright green = mined by you
-
-You can **search** by:
-- Block height
-- Miner ID
-- Hash prefix
-
----
-
-### Selected Block Panel
-Click a block to view:
-- Full block data
-- Hash
-- Previous hash
-- Nonce
-- Difficulty
-- Timestamp
-- Verification result
-
----
-
-### Full Ledger (Raw)
-Click **“View full ledger”** to see the complete chain in raw text format.
-
----
-
-## 🔐 Local Block Verification (Trustless)
-
-Your node does **not blindly trust the server**.
-
-For every block it:
-- Recomputes the SHA-256 hash
-- Verifies difficulty rules
-- Verifies `prevHash` linkage
-
-The UI clearly shows whether:
-- ✔ The entire chain is valid
-- ✖ A block is invalid (with the reason)
-
-This makes the Aure node a **verifying client**, not just a miner.
-
----
-
-## 📈 Charts
-
-### ⏱ Block Time Chart
-- Shows actual time between blocks
-- Helps evaluate difficulty tuning
-
-### ⚙ Difficulty Chart
-- Shows how difficulty changes over time
-
-Both charts are derived from **verified chain data**, not estimates.
-
----
-
-## 📊 My Node Statistics
-
-Your personal mining stats:
-
-- Blocks mined
-- Win percentage
-- Average difficulty of your wins
-- Blocks since last win (drought)
-- Current win streak
-
-These stats update automatically as new blocks are mined.
-
----
-
-## 🧑‍💻 My Node History
-
-Click **“My node history”** to see:
-- All blocks mined by your node
-- Hash, difficulty, timestamp per block
-
----
-
-## 🏆 Achievements & Badges
-
-The node tracks milestones locally and awards badges such as:
-
-- 🥇 First block mined
-- ⛏ 5 blocks mined
-- 🧱 Marathon miner (10+ blocks)
-- 🔥 High difficulty win
-- 🍀 Lucky streak
-- 🐢 Eco miner
-- 🚀 Full throttle miner
-
-Badges:
-- Persist across refreshes
-- Are stored locally in your browser
-- Do not affect consensus
-
----
-
-## 🔁 Reconnection & Stability
-
-- If the server restarts, the node **automatically reconnects**
-- Continuous mining resumes automatically
-- Manual disconnect disables auto-reconnect until you reconnect yourself
-
-This makes the node resilient to server restarts and network hiccups.
-
----
-
-## 🧪 Experimental Nature
-
-Aure is an **experimental blockchain** designed for learning and exploration.
-
-- There are **no tokens** yet
-- No economic value is implied
-- The server is currently centralized by design
-
-Future upgrades may include:
-- Transactions
-- Rewards
-- Multiple coordinators
-- Exportable ledgers
-
----
-
-## 🛡 Security Notes
-
-- All mining happens locally in your browser
-- No private keys
-- No wallets
-- No transactions
-- No data is sent except mined blocks
-
-Safe to run.
-
----
-
-## 🧠 Philosophy
-
-Aure is built to be:
-
-- Transparent
-- Inspectable
-- Educational
-- Fun to run
-
-Every node:
-- Verifies the chain
-- Competes fairly
-- Sees the same data
-
-## 🏁 Enjoy mining on **Aure** ⛏
-
+Aure Protocol: Sovereign. Secure. Social.
