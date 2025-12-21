@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Aure — Miner Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --panel: #131a2a;
+      --text: #e6ebff;
+      --muted: #8a92b2;
+      --accent: #4da3ff;
+      --success: #3ddc97;
+      --danger: #ff5c5c;
+      --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #121a33, var(--bg));
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 24px 32px;
+      border-bottom: 1px solid #1f2744;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      font-size: 20px;
+      margin: 0;
+      letter-spacing: 0.5px;
+    }
+
+    header span {
+      font-size: 13px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    main {
+      padding: 32px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, #141c35, var(--panel));
+      border: 1px solid #1f2744;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .value {
+      font-size: 28px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .dot.online {
+      background: var(--success);
+      color: var(--success);
+    }
+
+    .mono {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--muted);
+      word-break: break-all;
+    }
+
+    footer {
+      padding: 16px 32px;
+      border-top: 1px solid #1f2744;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Aure Miner</h1>
+    <span>local dashboard</span>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Connection</h2>
+      <div class="status">
+        <div id="conn-dot" class="dot"></div>
+        <span id="conn-text">DISCONNECTED</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Chain Height</h2>
+      <div id="height" class="value">—</div>
+    </div>
+
+    <div class="card">
+      <h2>Balances</h2>
+      <div id="balances" class="mono">waiting…</div>
+    </div>
+  </main>
+
+  <footer>
+    Aure • browser miner • experimental
+  </footer>
+
+  <!-- Existing logic -->
+  <script type="module" src="./main.js"></script>
+
+  <!-- UI bridge (read-only, safe) -->
+  <script>
+    // These hooks assume your existing ws.js sets state on window.aureWS (or similar)
+    // If not present, this does nothing — safe by default.
+
+    const dot = document.getElementById("conn-dot");
+    const text = document.getElementById("conn-text");
+    const heightEl = document.getElementById("height");
+    const balancesEl = document.getElementById("balances");
+
+    // Optional global hooks (non-fatal if missing)
+    window.addEventListener("aure:connected", () => {
+      dot.classList.add("online");
+      text.textContent = "CONNECTED";
+    });
+
+    window.addEventListener("aure:disconnected", () => {
+      dot.classList.remove("online");
+      text.textContent = "DISCONNECTED";
+    });
+
+    window.addEventListener("aure:update", (e) => {
+      const { chain, balances } = e.detail || {};
+
+      if (Array.isArray(chain)) {
+        heightEl.textContent = chain.length - 1;
+      }
+
+      if (balances && typeof balances === "object") {
+        balancesEl.textContent = JSON.stringify(balances, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>
