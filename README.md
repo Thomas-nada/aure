@@ -75,17 +75,16 @@ You should see:
 
 ## ⛏️ Running a Miner (Browser)
 
-1. Serve the project root (any static server works):
+1. Serve the project root:
 
 ```bash
-cd aure
-npx serve .
+python -m http.server 8000
 ```
 
 2. Open your browser at:
 
 ```
-http://localhost:3000
+http://localhost:8000
 ```
 
 3. The miner will automatically:
