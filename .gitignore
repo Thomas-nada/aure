@@ -1,0 +1,43 @@
+# ======================
+# Node / NPM
+# ======================
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# ======================
+# Runtime data (Aure)
+# ======================
+server/data/
+server/chain.json
+server/keydb.json
+
+# ======================
+# OS junk
+# ======================
+.DS_Store
+Thumbs.db
+
+# ======================
+# Editor / IDE
+# ======================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ======================
+# Build artifacts (future-proofing)
+# ======================
+dist/
+build/
+
+# ======================
+# Logs
+# ======================
+*.log
+
+# ======================
+# Environment
+# ======================
+.env
